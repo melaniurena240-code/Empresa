@@ -1,89 +1,95 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package modulo4b_inventario.dao;
 
-import config.DatabaseConnection;
 import modulo4b_inventario.models.Material;
+import config.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO para Material - Acceso a datos
+ */
 public class MaterialDAO {
-
-    public List<Material> obtenerTodos() throws SQLException {
-        List<Material> lista = new ArrayList<>();
-        String query = "SELECT * FROM materiales";
+    
+    public void crear(Material material) {
+        String sql = "INSERT INTO materiales (nombre_material, unidad_medida, id_categoria_material, id_proveedor) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-            while (rs.next()) {
-                lista.add(new Material(
-                    rs.getInt("id_material"),
-                    rs.getString("nombre_material"),
-                    rs.getString("unidad_medida"),
-                    rs.getInt("id_categoria_material"),
-                    rs.getInt("id_proveedor")
-                ));
-            }
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, material.getNombreMaterial());
+            stmt.setString(2, material.getUnidadMedida());
+            stmt.setInt(3, material.getIdCategoriaMaterial());
+            stmt.setInt(4, material.getIdProveedor());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return lista;
     }
-
-    public Material obtenerPorId(int id) throws SQLException {
-        String query = "SELECT * FROM materiales WHERE id_material = ?";
+    
+    public Material obtener(int id) {
+        String sql = "SELECT * FROM materiales WHERE id_material = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new Material(
-                    rs.getInt("id_material"),
-                    rs.getString("nombre_material"),
-                    rs.getString("unidad_medida"),
-                    rs.getInt("id_categoria_material"),
-                    rs.getInt("id_proveedor")
-                );
+                Material m = new Material();
+                m.setIdMaterial(rs.getInt("id_material"));
+                m.setNombreMaterial(rs.getString("nombre_material"));
+                m.setUnidadMedida(rs.getString("unidad_medida"));
+                m.setIdCategoriaMaterial(rs.getInt("id_categoria_material"));
+                m.setIdProveedor(rs.getInt("id_proveedor"));
+                return m;
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return null;
     }
-
-    public int crear(Material m) throws SQLException {
-        String query = "INSERT INTO materiales (nombre_material, unidad_medida, id_categoria_material, id_proveedor) VALUES (?, ?, ?, ?)";
+    
+    public List<Material> obtenerTodos() {
+        List<Material> materiales = new ArrayList<>();
+        String sql = "SELECT * FROM materiales";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            pstmt.setString(1, m.getNombreMaterial());
-            pstmt.setString(2, m.getUnidadMedida());
-            pstmt.setInt(3, m.getIdCategoriaMaterial());
-            pstmt.setInt(4, m.getIdProveedor());
-            pstmt.executeUpdate();
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) return rs.getInt(1);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Material m = new Material();
+                m.setIdMaterial(rs.getInt("id_material"));
+                m.setNombreMaterial(rs.getString("nombre_material"));
+                m.setUnidadMedida(rs.getString("unidad_medida"));
+                m.setIdCategoriaMaterial(rs.getInt("id_categoria_material"));
+                m.setIdProveedor(rs.getInt("id_proveedor"));
+                materiales.add(m);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return -1;
+        return materiales;
     }
-
-    public boolean actualizar(Material m) throws SQLException {
-        String query = "UPDATE materiales SET nombre_material=?, unidad_medida=?, id_categoria_material=?, id_proveedor=? WHERE id_material=?";
+    
+    public void actualizar(Material material) {
+        String sql = "UPDATE materiales SET nombre_material = ?, unidad_medida = ?, id_categoria_material = ?, id_proveedor = ? WHERE id_material = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setString(1, m.getNombreMaterial());
-            pstmt.setString(2, m.getUnidadMedida());
-            pstmt.setInt(3, m.getIdCategoriaMaterial());
-            pstmt.setInt(4, m.getIdProveedor());
-            pstmt.setInt(5, m.getIdMaterial());
-            return pstmt.executeUpdate() > 0;
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, material.getNombreMaterial());
+            stmt.setString(2, material.getUnidadMedida());
+            stmt.setInt(3, material.getIdCategoriaMaterial());
+            stmt.setInt(4, material.getIdProveedor());
+            stmt.setInt(5, material.getIdMaterial());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
-
-    public boolean eliminar(int id) throws SQLException {
-        String query = "DELETE FROM materiales WHERE id_material = ?";
+    
+    public void eliminar(int id) {
+        String sql = "DELETE FROM materiales WHERE id_material = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
