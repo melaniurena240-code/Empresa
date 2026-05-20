@@ -1,225 +1,231 @@
 package modulo4d_subcontratistas.ui;
 
-import utils.UITheme;
-import utils.NotificationManager;
-import utils.ChartUtils;
-import modulo4d_subcontratistas.dao.SubcontratistaDAO;
-import modulo4d_subcontratistas.models.Subcontratista;
+import modulo4d_subcontratistas.models.*;
+import modulo4d_subcontratistas.dao.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Frame principal del módulo de Subcontratistas
+ * Frame para gestión de Subcontratistas
  */
 public class SubcontratistasFrame extends JFrame {
-    private JTabbedPane tabbedPane;
-    private SubcontratistaDAO subcontratistaDAO;
-    private JPanel notificationPanel;
+    private JTable tablaSubcontratistas;
+    private DefaultTableModel modeloTabla;
+    private SubcontratistDAO daoSubcontratista;
     
     public SubcontratistasFrame() {
-        setTitle("Módulo Subcontratistas - Constructora Empresa");
+        setTitle("Gestión de Subcontratistas");
+        setSize(1000, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(1200, 750);
         setLocationRelativeTo(null);
         
-        subcontratistaDAO = new SubcontratistaDAO();
+        daoSubcontratista = new SubcontratistDAO();
         
-        initComponents();
+        inicializarUI();
+        cargarDatos();
     }
     
-    private void initComponents() {
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        UITheme.applyTheme(mainPanel);
-        
-        // Panel de encabezado
-        JPanel headerPanel = createHeaderPanel();
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
-        
-        // Panel de notificaciones
-        notificationPanel = new JPanel();
-        notificationPanel.setLayout(new BoxLayout(notificationPanel, BoxLayout.Y_AXIS));
-        UITheme.applyTheme(notificationPanel);
-        NotificationManager.setContainerPanel(notificationPanel);
-        mainPanel.add(notificationPanel, BorderLayout.PAGE_END);
-        
-        // Panel con pestañas
-        tabbedPane = new JTabbedPane();
-        tabbedPane.setBackground(UITheme.COLOR_BG);
-        tabbedPane.setForeground(UITheme.COLOR_TEXT);
-        tabbedPane.setFont(UITheme.FONT_LABEL);
-        
-        tabbedPane.addTab("👷 Subcontratistas", createSubcontratistasPanel());
-        tabbedPane.addTab("📋 Contratos", createContratosPanel());
-        tabbedPane.addTab("💳 Pagos", createPagosPanel());
-        tabbedPane.addTab("⭐ Evaluación", createEvaluacionPanel());
-        
-        mainPanel.add(tabbedPane, BorderLayout.CENTER);
-        
-        setContentPane(mainPanel);
-    }
-    
-    private JPanel createHeaderPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UITheme.applyThemeDark(panel);
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panel.setPreferredSize(new Dimension(0, 70));
-        
-        JLabel titleLabel = new JLabel("👷 Gestión de Subcontratistas");
-        UITheme.styleTitleLabel(titleLabel);
-        panel.add(titleLabel, BorderLayout.WEST);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        UITheme.applyThemeDark(buttonPanel);
-        
-        JButton btnActualizar = new JButton("🔄 Actualizar");
-        UITheme.styleButton(btnActualizar);
-        btnActualizar.addActionListener(e -> recargarDatos());
-        buttonPanel.add(btnActualizar);
-        
-        JButton btnReportes = new JButton("📊 Reportes");
-        UITheme.styleButton(btnReportes);
-        buttonPanel.add(btnReportes);
-        
-        panel.add(buttonPanel, BorderLayout.EAST);
-        
-        return panel;
-    }
-    
-    private JPanel createSubcontratistasPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UITheme.applyTheme(panel);
+    private void inicializarUI() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Panel de controles
-        JPanel controlPanel = createControlPanel();
-        panel.add(controlPanel, BorderLayout.NORTH);
+        // Panel de botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnNuevo = new JButton("Nuevo Subcontratista");
+        JButton btnActualizar = new JButton("Actualizar");
+        JButton btnEditar = new JButton("Editar");
+        JButton btnEliminar = new JButton("Eliminar");
         
-        // Tabla de subcontratistas
-        JTable table = new JTable();
-        UITheme.styleTable(table);
-        DefaultTableModel model = new DefaultTableModel();
-        model.setColumnIdentifiers(new String[]{"ID", "Nombre", "Especialidad", "Teléfono", "Email", "CI"});
-        table.setModel(model);
+        btnNuevo.addActionListener(e -> abrirNuevoSubcontratista());
+        btnActualizar.addActionListener(e -> cargarDatos());
+        btnEditar.addActionListener(e -> editarSubcontratista());
+        btnEliminar.addActionListener(e -> eliminarSubcontratista());
         
-        // Cargar datos
-        List<Subcontratista> subcontratistas = subcontratistaDAO.obtenerTodos();
+        panelBotones.add(btnNuevo);
+        panelBotones.add(btnActualizar);
+        panelBotones.add(btnEditar);
+        panelBotones.add(btnEliminar);
+        
+        // Tabla
+        String[] columnas = {"ID", "Nombre", "Representante", "CI", "Teléfono", "Email", "Especialidad"};
+        modeloTabla = new DefaultTableModel(columnas, 0);
+        tablaSubcontratistas = new JTable(modeloTabla);
+        JScrollPane scrollPane = new JScrollPane(tablaSubcontratistas);
+        
+        panel.add(panelBotones, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        add(panel);
+    }
+    
+    private void cargarDatos() {
+        modeloTabla.setRowCount(0);
+        List<Subcontratista> subcontratistas = daoSubcontratista.obtenerTodos();
+        
         for (Subcontratista s : subcontratistas) {
-            model.addRow(new Object[]{s.getIdSubcontratista(), s.getNombreSubcontratista(), s.getEspecialidad(),
-                s.getTelefonoSubcontratista(), s.getEmailSubcontratista(), s.getCiSubcontratista()});
+            modeloTabla.addRow(new Object[]{
+                s.getIdSubcontratista(),
+                s.getNombreSubcontratista(),
+                s.getRepresentante(),
+                s.getCiSubcontratista(),
+                s.getTelefonoSubcontratista(),
+                s.getEmailSubcontratista(),
+                s.getEspecialidad()
+            });
+        }
+    }
+    
+    private void abrirNuevoSubcontratista() {
+        JDialog dialog = new JDialog(this, "Nuevo Subcontratista", true);
+        dialog.setSize(500, 350);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JLabel lblNombre = new JLabel("Nombre:");
+        JTextField txtNombre = new JTextField();
+        
+        JLabel lblRepresentante = new JLabel("Representante:");
+        JTextField txtRepresentante = new JTextField();
+        
+        JLabel lblCI = new JLabel("CI:");
+        JTextField txtCI = new JTextField();
+        
+        JLabel lblTelefono = new JLabel("Teléfono:");
+        JTextField txtTelefono = new JTextField();
+        
+        JLabel lblEmail = new JLabel("Email:");
+        JTextField txtEmail = new JTextField();
+        
+        JLabel lblDireccion = new JLabel("Dirección:");
+        JTextField txtDireccion = new JTextField();
+        
+        JLabel lblEspecialidad = new JLabel("Especialidad:");
+        JTextField txtEspecialidad = new JTextField();
+        
+        panel.add(lblNombre);
+        panel.add(txtNombre);
+        panel.add(lblRepresentante);
+        panel.add(txtRepresentante);
+        panel.add(lblCI);
+        panel.add(txtCI);
+        panel.add(lblTelefono);
+        panel.add(txtTelefono);
+        panel.add(lblEmail);
+        panel.add(txtEmail);
+        panel.add(lblDireccion);
+        panel.add(txtDireccion);
+        panel.add(lblEspecialidad);
+        panel.add(txtEspecialidad);
+        
+        JButton btnGuardar = new JButton("Guardar");
+        btnGuardar.addActionListener(e -> {
+            Subcontratista s = new Subcontratista(
+                txtNombre.getText(),
+                txtRepresentante.getText(),
+                txtCI.getText(),
+                txtTelefono.getText(),
+                txtEmail.getText(),
+                txtDireccion.getText(),
+                txtEspecialidad.getText()
+            );
+            daoSubcontratista.crear(s);
+            cargarDatos();
+            dialog.dispose();
+            JOptionPane.showMessageDialog(this, "Subcontratista guardado correctamente");
+        });
+        
+        panel.add(btnGuardar);
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private void editarSubcontratista() {
+        int fila = tablaSubcontratistas.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un subcontratista");
+            return;
         }
         
-        JScrollPane scrollPane = new JScrollPane(table);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        int id = (Integer) modeloTabla.getValueAt(fila, 0);
+        Subcontratista s = daoSubcontratista.obtener(id);
         
-        return panel;
-    }
-    
-    private JPanel createContratosPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UITheme.applyTheme(panel);
+        JDialog dialog = new JDialog(this, "Editar Subcontratista", true);
+        dialog.setSize(500, 350);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Panel de controles
-        JPanel controlPanel = createControlPanel();
-        panel.add(controlPanel, BorderLayout.NORTH);
+        JLabel lblNombre = new JLabel("Nombre:");
+        JTextField txtNombre = new JTextField(s.getNombreSubcontratista());
         
-        // Tabla de contratos
-        JTable table = new JTable();
-        UITheme.styleTable(table);
-        DefaultTableModel model = new DefaultTableModel();
-        model.setColumnIdentifiers(new String[]{"Número", "Subcontratista", "Proyecto", "Inicio", "Fin", "Monto", "Estado"});
-        table.setModel(model);
+        JLabel lblRepresentante = new JLabel("Representante:");
+        JTextField txtRepresentante = new JTextField(s.getRepresentante());
         
-        JScrollPane scrollPane = new JScrollPane(table);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        JLabel lblCI = new JLabel("CI:");
+        JTextField txtCI = new JTextField(s.getCiSubcontratista());
         
-        return panel;
-    }
-    
-    private JPanel createPagosPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UITheme.applyTheme(panel);
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JLabel lblTelefono = new JLabel("Teléfono:");
+        JTextField txtTelefono = new JTextField(s.getTelefonoSubcontratista());
         
-        // Panel de controles
-        JPanel controlPanel = createControlPanel();
-        panel.add(controlPanel, BorderLayout.NORTH);
+        JLabel lblEmail = new JLabel("Email:");
+        JTextField txtEmail = new JTextField(s.getEmailSubcontratista());
         
-        // Tabla de pagos
-        JTable table = new JTable();
-        UITheme.styleTable(table);
-        DefaultTableModel model = new DefaultTableModel();
-        model.setColumnIdentifiers(new String[]{"ID", "Subcontratista", "Monto", "Fecha", "Método", "Estado"});
-        table.setModel(model);
+        JLabel lblDireccion = new JLabel("Dirección:");
+        JTextField txtDireccion = new JTextField(s.getDireccionSubcontratista());
         
-        JScrollPane scrollPane = new JScrollPane(table);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        JLabel lblEspecialidad = new JLabel("Especialidad:");
+        JTextField txtEspecialidad = new JTextField(s.getEspecialidad());
         
-        return panel;
-    }
-    
-    private JPanel createEvaluacionPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UITheme.applyTheme(panel);
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.add(lblNombre);
+        panel.add(txtNombre);
+        panel.add(lblRepresentante);
+        panel.add(txtRepresentante);
+        panel.add(lblCI);
+        panel.add(txtCI);
+        panel.add(lblTelefono);
+        panel.add(txtTelefono);
+        panel.add(lblEmail);
+        panel.add(txtEmail);
+        panel.add(lblDireccion);
+        panel.add(txtDireccion);
+        panel.add(lblEspecialidad);
+        panel.add(txtEspecialidad);
         
-        // Gráfico de evaluaciones
-        Map<String, Integer> dataEvaluaciones = new HashMap<>();
-        dataEvaluaciones.put("Excelente", 45);
-        dataEvaluaciones.put("Bueno", 30);
-        dataEvaluaciones.put("Regular", 15);
-        dataEvaluaciones.put("Malo", 10);
-        
-        JPanel chartPanel = ChartUtils.createPieChart("Evaluación de Subcontratistas", dataEvaluaciones);
-        panel.add(chartPanel, BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private JPanel createControlPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UITheme.applyTheme(panel);
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        UITheme.applyTheme(buttonPanel);
-        
-        JButton btnNuevo = new JButton("➕ Nuevo");
-        UITheme.styleButton(btnNuevo);
-        btnNuevo.addActionListener(e -> NotificationManager.showSuccess("Nuevo subcontratista agregado"));
-        buttonPanel.add(btnNuevo);
-        
-        JButton btnEditar = new JButton("✏️ Editar");
-        UITheme.styleButton(btnEditar);
-        buttonPanel.add(btnEditar);
-        
-        JButton btnEliminar = new JButton("🗑️ Eliminar");
-        UITheme.styleButtonDanger(btnEliminar);
-        buttonPanel.add(btnEliminar);
-        
-        JTextField searchField = new JTextField(20);
-        UITheme.styleTextField(searchField);
-        searchField.setPreferredSize(new Dimension(250, 30));
-        buttonPanel.add(new JLabel("🔍 Buscar:"));
-        buttonPanel.add(searchField);
-        
-        panel.add(buttonPanel, BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private void recargarDatos() {
-        NotificationManager.showInfo("Datos recargados");
-    }
-    
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            SubcontratistasFrame frame = new SubcontratistasFrame();
-            frame.setVisible(true);
+        JButton btnActualizar = new JButton("Actualizar");
+        btnActualizar.addActionListener(e -> {
+            s.setNombreSubcontratista(txtNombre.getText());
+            s.setRepresentante(txtRepresentante.getText());
+            s.setCiSubcontratista(txtCI.getText());
+            s.setTelefonoSubcontratista(txtTelefono.getText());
+            s.setEmailSubcontratista(txtEmail.getText());
+            s.setDireccionSubcontratista(txtDireccion.getText());
+            s.setEspecialidad(txtEspecialidad.getText());
+            daoSubcontratista.actualizar(s);
+            cargarDatos();
+            dialog.dispose();
+            JOptionPane.showMessageDialog(this, "Subcontratista actualizado");
         });
+        
+        panel.add(btnActualizar);
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private void eliminarSubcontratista() {
+        int fila = tablaSubcontratistas.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un subcontratista");
+            return;
+        }
+        
+        int id = (Integer) modeloTabla.getValueAt(fila, 0);
+        daoSubcontratista.eliminar(id);
+        cargarDatos();
+        JOptionPane.showMessageDialog(this, "Subcontratista eliminado");
     }
 }

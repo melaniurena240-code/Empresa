@@ -1,7 +1,6 @@
 package modulo4d_subcontratistas.models;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * Modelo de Subcontratista
@@ -17,23 +16,22 @@ public class Subcontratista implements Serializable {
     private String emailSubcontratista;
     private String direccionSubcontratista;
     private String especialidad;
-    private LocalDateTime fechaRegistro;
     
     public Subcontratista() {
-        this.fechaRegistro = LocalDateTime.now();
     }
     
-    public Subcontratista(String nombreSubcontratista, String especialidad, String telefonoSubcontratista,
-                          String emailSubcontratista, String ciSubcontratista) {
+    public Subcontratista(String nombreSubcontratista, String representante, String ciSubcontratista,
+                         String telefonoSubcontratista, String emailSubcontratista, 
+                         String direccionSubcontratista, String especialidad) {
         this.nombreSubcontratista = nombreSubcontratista;
-        this.especialidad = especialidad;
+        this.representante = representante;
+        this.ciSubcontratista = ciSubcontratista;
         this.telefonoSubcontratista = telefonoSubcontratista;
         this.emailSubcontratista = emailSubcontratista;
-        this.ciSubcontratista = ciSubcontratista;
-        this.fechaRegistro = LocalDateTime.now();
+        this.direccionSubcontratista = direccionSubcontratista;
+        this.especialidad = especialidad;
     }
     
-    // Getters y Setters
     public int getIdSubcontratista() { return idSubcontratista; }
     public void setIdSubcontratista(int idSubcontratista) { this.idSubcontratista = idSubcontratista; }
     
@@ -57,9 +55,6 @@ public class Subcontratista implements Serializable {
     
     public String getEspecialidad() { return especialidad; }
     public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
-    
-    public LocalDateTime getFechaRegistro() { return fechaRegistro; }
-    public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
     
     @Override
     public String toString() {
